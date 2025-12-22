@@ -7,6 +7,7 @@ from scipy.spatial.distance import cityblock, euclidean
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from rapidfuzz import fuzz
+from scipy.sparse import hstack
 
 nltk.download("wordnet")
 nltk.download("omw-1.4")
@@ -34,10 +35,6 @@ def ngram_overlap_tokens(t1, t2, n=2):
     return len(ngrams1 & ngrams2) / len(ngrams1 | ngrams2)
 
 def get_wordnet_pos(tag):
-    """
-    Преобразует часть речи из nltk.pos_tag в формат wordnet:
-    NN -> n, VB -> v, JJ -> a, RB -> r.
-    """
     if tag.startswith('J'):
         return wordnet.ADJ
     elif tag.startswith('V'):
@@ -53,11 +50,9 @@ def lemma_tokenizer(text):
     lemmatizer = WordNetLemmatizer()
     stop_words = set(stopwords.words('english'))
     tokens = word_tokenize(text.lower())
-    # убрать мусор и стоп-слова
     tokens = [t for t in tokens if t.isalpha() and t not in stop_words]
-    # POS-тэги
+
     pos_tags = nltk.pos_tag(tokens)
-    # лемматизация
     lemmas = [
         lemmatizer.lemmatize(token, get_wordnet_pos(tag))
         for token, tag in pos_tags
@@ -77,7 +72,6 @@ def data_processing(df):
     tfidf_q1 = vectorizer.transform(df["q1_clean"])
     tfidf_q2 = vectorizer.transform(df["q2_clean"])
     
-    # Добавляем признаки
     df["common_words"] = df.apply(lambda x: common_words(x['q1_tokens'], x['q2_tokens']), axis=1)
     df["jaccard"] = df.apply(lambda x: jaccard(x['q1_tokens'], x['q2_tokens']), axis=1)
     df['lev_ratio'] = df.apply(lambda x: fuzz.ratio(str(x['question1']), str(x['question2'])) / 100, axis=1)
@@ -92,7 +86,7 @@ def tfidf_features(df, vectorizer=None):
         vectorizer = TfidfVectorizer()
         vectorizer.fit(pd.concat([df["q1_clean"], df["q2_clean"]]))
 
-    # Если передали — только transform
+
     tfidf_q1 = vectorizer.transform(df["q1_clean"])
     tfidf_q2 = vectorizer.transform(df["q2_clean"])
 
@@ -107,3 +101,24 @@ def tfidf_features(df, vectorizer=None):
                        for i in range(len(df))]
 
     return df, vectorizer, tfidf_q1, tfidf_q2
+
+def deploy_features(df, vectorizer):
+    df = data_processing(df)
+    train_cols = ["common_words",	"jaccard", "lev_ratio",	"bigram_overlap",	"trigram_overlap",	"cosine_sim",	"manhattan", "euclidean", "sbert_cosine"]
+
+    tfidf_q1 = vectorizer.transform(df["q1_clean"])
+    tfidf_q2 = vectorizer.transform(df["q2_clean"])
+
+    # distance features
+    df["cosine_sim"] = [cosine_similarity(tfidf_q1[i], tfidf_q2[i])[0][0] 
+                        for i in range(len(df))]
+    df["manhattan"] = [cityblock(tfidf_q1[i].toarray().ravel(),
+                                 tfidf_q2[i].toarray().ravel()) 
+                       for i in range(len(df))]
+    df["euclidean"] = [euclidean(tfidf_q1[i].toarray().ravel(),
+                                 tfidf_q2[i].toarray().ravel()) 
+                       for i in range(len(df))]
+    
+    tfidf = hstack([tfidf_q1, tfidf_q2])
+    X_stack = hstack([tfidf, df[train_cols].values])
+    return X_stack
