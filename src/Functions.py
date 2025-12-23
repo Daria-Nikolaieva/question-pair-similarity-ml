@@ -9,13 +9,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from rapidfuzz import fuzz
 from scipy.sparse import hstack
 
-nltk.download("wordnet")
-nltk.download("omw-1.4")
+
 nltk.download("punkt")
-nltk.download("averaged_perceptron_tagger")
 nltk.download('stopwords')
 nltk.download('punkt_tab')
 nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('wordnet')
+
 
 def common_words(q1, q2):
     return len(set(q1) & set(q2))

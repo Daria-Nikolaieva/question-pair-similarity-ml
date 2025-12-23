@@ -1,4 +1,3 @@
-import pickle
 import numpy as np
 import pandas as pd
 import torch
@@ -95,16 +94,6 @@ def predict(request: PredictionRequest):
         "question1": request.question1,
         "question2": request.question2
     }])
-
-    # LightGBM
-    X = deploy_features(df, vectorizer)
-    lgbm_proba = lgbm_model.predict_proba(X)[:, 1]
-
-    # MLP
-    device = torch.device("cpu")
-    mlp_model = SBERTMLP(input_dim=INPUT_DIM)
-    mlp_model.load_state_dict(torch.load("models/sbert_mlp.pt", map_location=device))
-    mlp_model.eval()
     sbert = get_sbert_model()
     emb_q1 = sbert.encode(
     df["question1"].tolist(),
@@ -114,6 +103,21 @@ def predict(request: PredictionRequest):
         df["question2"].tolist(),
         batch_size=64
     )
+    df["sbert_cosine"] = [
+    cosine_similarity([e1], [e2])[0][0]
+    for e1, e2 in zip(emb_q1, emb_q2)
+    ]
+    
+    # LightGBM
+    X = deploy_features(df, vectorizer)
+    lgbm_proba = lgbm_model.predict_proba(X)[:, 1]
+
+    # MLP
+    device = torch.device("cpu")
+    mlp_model = SBERTMLP(input_dim=INPUT_DIM)
+    mlp_model.load_state_dict(torch.load("models/sbert_mlp.pt", map_location=device))
+    mlp_model.eval()
+
     X_sbert = np.hstack([emb_q1, emb_q2, np.abs(emb_q1 - emb_q2)])
     X_sbert_scaled = scaler.transform(X_sbert)
     X_tensor = torch.tensor(X_sbert_scaled, dtype=torch.float32).to(device)
