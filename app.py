@@ -27,6 +27,7 @@ lgbm_model = joblib.load("models/lgbm_best_model.pkl")
 scaler = joblib.load("models/sbert_scaler_0,28.pkl")
 vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
 #sbert = SentenceTransformer("all-MiniLM-L6-v2", device=device)
+sbert_model = None
 
 def get_sbert_model(device="cpu"):
     global sbert_model
@@ -107,7 +108,7 @@ def predict(request: PredictionRequest):
     cosine_similarity([e1], [e2])[0][0]
     for e1, e2 in zip(emb_q1, emb_q2)
     ]
-    
+
     # LightGBM
     X = deploy_features(df, vectorizer)
     lgbm_proba = lgbm_model.predict_proba(X)[:, 1]
