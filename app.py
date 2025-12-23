@@ -15,15 +15,28 @@ from src.Functions import (
     deploy_features
 )
 
+import os
+
+os.environ["TRANSFORMERS_CACHE"] = "/tmp/hf"
+os.environ["HF_HOME"] = "/tmp/hf"
 # Init app
 app = FastAPI(title="Question Duplicate Detector")
+
 
 # Load models
 lgbm_model = joblib.load("models/lgbm_best_model.pkl")
 scaler = joblib.load("models/sbert_scaler_0,28.pkl")
 vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
+#sbert = SentenceTransformer("all-MiniLM-L6-v2", device=device)
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+def get_sbert_model(device="cpu"):
+    global sbert_model
+    if sbert_model is None:
+        sbert_model = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2",
+            device=device
+        )
+    return sbert_model
 
 class SBERTMLP(nn.Module):
     def __init__(self, input_dim):
@@ -41,9 +54,6 @@ class SBERTMLP(nn.Module):
         )
     def forward(self, x):
         return self.model(x)
-
-
-sbert = SentenceTransformer("all-MiniLM-L6-v2", device=device)
 
 
 class PredictionRequest(BaseModel):
@@ -95,6 +105,7 @@ def predict(request: PredictionRequest):
     mlp_model = SBERTMLP(input_dim=INPUT_DIM)
     mlp_model.load_state_dict(torch.load("models/sbert_mlp.pt", map_location=device))
     mlp_model.eval()
+    sbert = get_sbert_model()
     emb_q1 = sbert.encode(
     df["question1"].tolist(),
     batch_size=64
