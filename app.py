@@ -32,10 +32,8 @@ sbert_model = None
 def get_sbert_model(device="cpu"):
     global sbert_model
     if sbert_model is None:
-        sbert_model = SentenceTransformer(
-            "sentence-transformers/all-MiniLM-L6-v2",
-            device=device
-        )
+        #sbert_model_path = os.path.join("models", "sbert")
+        sbert_model = SentenceTransformer("models/sbert", device=device)
     return sbert_model
 
 class SBERTMLP(nn.Module):
