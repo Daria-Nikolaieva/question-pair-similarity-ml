@@ -19,15 +19,9 @@ from src.Functions import (
 app = FastAPI(title="Question Duplicate Detector")
 
 # Load models
-import joblib
-
 lgbm_model = joblib.load("models/lgbm_best_model.pkl")
-
-with open("models/sbert_scaler_0,28.pkl", "rb") as f:
-    scaler = pickle.load(f)
-
-with open("models/tfidf_vectorizer.pkl", "rb") as f:
-    vectorizer = pickle.load(f)
+scaler = joblib.load("models/sbert_scaler_0,28.pkl")
+vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
