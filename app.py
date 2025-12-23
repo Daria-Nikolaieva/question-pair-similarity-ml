@@ -19,8 +19,9 @@ from src.Functions import (
 app = FastAPI(title="Question Duplicate Detector")
 
 # Load models
-with open("models/lgbm_best_model.pkl", "rb") as f:
-    lgbm_model = pickle.load(f)
+import joblib
+
+lgbm_model = joblib.load("models/lgbm_best_model.pkl")
 
 with open("models/sbert_scaler_0,28.pkl", "rb") as f:
     scaler = pickle.load(f)
