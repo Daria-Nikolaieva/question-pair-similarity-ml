@@ -94,11 +94,11 @@ def tfidf_features(df, vectorizer=None):
     # distance features
     df["cosine_sim"] = [cosine_similarity(tfidf_q1[i], tfidf_q2[i])[0][0] 
                         for i in range(len(df))]
-    df["manhattan"] = [cityblock(tfidf_q1[i].toarray().ravel(),
-                                 tfidf_q2[i].toarray().ravel()) 
+    df["manhattan"] = [cityblock(tfidf_q1[i].ravel(),
+                                 tfidf_q2[i].ravel()) 
                        for i in range(len(df))]
-    df["euclidean"] = [euclidean(tfidf_q1[i].toarray().ravel(),
-                                 tfidf_q2[i].toarray().ravel()) 
+    df["euclidean"] = [euclidean(tfidf_q1[i].ravel(),
+                                 tfidf_q2[i].ravel()) 
                        for i in range(len(df))]
 
     return df, vectorizer, tfidf_q1, tfidf_q2

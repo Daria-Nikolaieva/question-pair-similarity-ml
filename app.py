@@ -102,24 +102,26 @@ def predict(request: PredictionRequest):
         "question1": request.question1,
         "question2": request.question2
     }])
+    print("before sbert")
     sbert = get_sbert_model()
     emb_q1 = sbert.encode(
     df["question1"].tolist(),
-    batch_size=64
+    batch_size=1
     )
     emb_q2 = sbert.encode(
         df["question2"].tolist(),
-        batch_size=64
+        batch_size=1
     )
     df["sbert_cosine"] = [
     cosine_similarity([e1], [e2])[0][0]
     for e1, e2 in zip(emb_q1, emb_q2)
     ]
-
+    print("after sbert")
     # LightGBM
     X = deploy_features(df, vectorizer)
+    print("after features")
     lgbm_proba = lgbm_model.predict_proba(X)[:, 1]
-
+    print("after predict")
     # MLP
     # device = torch.device("cpu")
     # mlp_model = SBERTMLP(input_dim=INPUT_DIM)
