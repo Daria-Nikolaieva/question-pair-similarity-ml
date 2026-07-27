@@ -13,7 +13,7 @@ from scipy.sparse import hstack
 nltk.download("punkt")
 nltk.download('stopwords')
 nltk.download('punkt_tab')
-nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
 STOP_WORDS = set(stopwords.words('english'))
 LEMMATIZER = WordNetLemmatizer()
