@@ -1,8 +1,17 @@
+import os
+
+print("MY APP VERSION WITHOUT MLP")
+
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
+
 import numpy as np
 import pandas as pd
-import torch
+#import torch
 import joblib
-from torch import nn
+#from torch import nn
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -24,7 +33,7 @@ app = FastAPI(title="Question Duplicate Detector")
 
 # Load models
 lgbm_model = joblib.load("models/lgbm_best_model.pkl")
-scaler = joblib.load("models/sbert_scaler_0,28.pkl")
+#scaler = joblib.load("models/sbert_scaler_0,28.pkl")
 vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
 #sbert = SentenceTransformer("all-MiniLM-L6-v2", device=device)
 sbert_model = None
@@ -32,28 +41,26 @@ sbert_model = None
 def get_sbert_model(device="cpu"):
     global sbert_model
     if sbert_model is None:
-        sbert_model = SentenceTransformer(
-            "sentence-transformers/all-MiniLM-L6-v2",
-            device=device
-        )
+        #sbert_model_path = os.path.join("models", "sbert")
+        sbert_model = SentenceTransformer("models/sbert", device=device)
     return sbert_model
 
-class SBERTMLP(nn.Module):
-    def __init__(self, input_dim):
-        super().__init__()
-        self.model = nn.Sequential(
-            nn.Linear(input_dim, 256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(256, 64),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(64, 1)
-        )
-    def forward(self, x):
-        return self.model(x)
+# class SBERTMLP(nn.Module):
+#     def __init__(self, input_dim):
+#         super().__init__()
+#         self.model = nn.Sequential(
+#             nn.Linear(input_dim, 256),
+#             nn.BatchNorm1d(256),
+#             nn.ReLU(),
+#             nn.Dropout(0.2),
+#             nn.Linear(256, 64),
+#             nn.BatchNorm1d(64),
+#             nn.ReLU(),
+#             nn.Dropout(0.2),
+#             nn.Linear(64, 1)
+#         )
+#     def forward(self, x):
+#         return self.model(x)
 
 
 class PredictionRequest(BaseModel):
@@ -114,22 +121,22 @@ def predict(request: PredictionRequest):
     lgbm_proba = lgbm_model.predict_proba(X)[:, 1]
 
     # MLP
-    device = torch.device("cpu")
+    # device = torch.device("cpu")
+    # mlp_model = SBERTMLP(input_dim=INPUT_DIM)
+    # mlp_model.load_state_dict(torch.load("models/sbert_mlp.pt", map_location=device))
+    # mlp_model.eval()
 
-    X_sbert = np.hstack([emb_q1, emb_q2, np.abs(emb_q1 - emb_q2)])
-    X_sbert_scaled = scaler.transform(X_sbert)
-    X_tensor = torch.tensor(X_sbert_scaled, dtype=torch.float32).to(device)
-    INPUT_DIM = X_tensor.shape[1]
+    # X_sbert = np.hstack([emb_q1, emb_q2, np.abs(emb_q1 - emb_q2)])
+    # X_sbert_scaled = scaler.transform(X_sbert)
+    # X_tensor = torch.tensor(X_sbert_scaled, dtype=torch.float32).to(device)
+    # INPUT_DIM = X_tensor.shape[1]
 
-    mlp_model = SBERTMLP(input_dim=INPUT_DIM)
-    mlp_model.load_state_dict(torch.load("models/sbert_mlp.pt", map_location=device))
-    mlp_model.eval()
-
-    with torch.no_grad():
-        mlp_proba = torch.sigmoid(mlp_model(X_tensor)).cpu().item()
+    # with torch.no_grad():
+    #     mlp_proba = torch.sigmoid(mlp_model(X_tensor)).cpu().item()
 
     # Weighted ensemble
-    final_proba = 0.4 * lgbm_proba[0] + 0.6 * mlp_proba
+    # final_proba = 0.4 * lgbm_proba[0] + 0.6 * mlp_proba
+    final_proba = lgbm_proba[0]
 
     return {
         "duplicate_probability": round(float(final_proba), 4),
