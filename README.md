@@ -1,75 +1,78 @@
 # 🔍 Duplicate Questions Detection
-## 1. Назва проєкту та короткий опис
 
-Duplicate Questions Detection — це проєкт з побудови моделі машинного навчання для визначення, чи є пара питань дублікатами за змістом.
-Задача полягає у виявленні семантично схожих запитів, навіть якщо вони сформульовані різними словами.
+## 1. Project Overview
 
-## 2. Бізнес-задача та мета
+Duplicate Questions Detection is a machine learning project that aims to identify whether a pair of questions has the same meaning. The goal is to detect semantically equivalent questions, even when they are phrased differently.
 
-У багатьох сервісах (FAQ, служби підтримки, Q&A-платформи) користувачі часто ставлять однакові запитання у різних формулюваннях. Це призводить до:
-дублювання контенту, зайвого навантаження на модераторів, погіршення користувацького досвіду.
-Мета проєкту — побудувати модель, яка автоматично визначає, чи є два питання дублікатами, з високою точністю та стабільною якістю.
+## 2. Business Problem and Objective
 
-## 3. Дані
+On many platforms, such as FAQ systems, customer support services, and Q&A websites, users often ask the same question using different wording. This results in duplicated content, increased workload for moderators, and a poorer user experience.
 
-- Джерело: Quora Question Pairs
-https://www.kaggle.com/c/quora-question-pairs
-- Розмір: ~400 000 пар питань
-- Опис:
- question1, question2 — текстові питання
- is_duplicate — цільова змінна (1 — дублікати, 0 — ні)
- Дані містять різноманітні формулювання, синоніми та перефразування, що робить задачу нетривіальною.
+The objective of this project is to build a machine learning model that can automatically identify duplicate questions with high accuracy and robust performance.
 
-## 4. Підхід до оцінювання та метрика
+## 3. Dataset
 
-Основною метрикою обрано Log Loss, оскільки:
+- **Source:** Quora Question Pairs  
+  https://www.kaggle.com/c/quora-question-pairs
 
-- задача є бінарною класифікацією з імовірнісним виходом;
-- важливо оцінювати не лише клас, а й впевненість моделі;
-- метрика добре підходить для порівняння ансамблевих моделей.
-  
-Додатково аналізувалися:
+- **Size:** ~400,000 question pairs
+
+- **Features:**
+  - `question1` — first question
+  - `question2` — second question
+  - `is_duplicate` — target variable (`1` for duplicate questions, `0` otherwise)
+
+The dataset contains a wide variety of question formulations, including synonyms and paraphrases, making duplicate detection a challenging semantic classification task.
+
+## 4. Evaluation Strategy
+
+The primary evaluation metric is **Log Loss (Cross-Entropy Loss)** because:
+
+- the task is a binary classification problem with probabilistic outputs;
+- it evaluates both prediction accuracy and confidence;
+- it is well suited for comparing individual models and ensemble approaches.
+
+Additional evaluation methods include:
 
 - Confusion Matrix
 - Precision / Recall
-- Threshold tuning
+- Decision threshold tuning
 
-## 5. Підхід до розв’язку та інструменти
+## 5. Solution Approach and Tech Stack
 
-У межах проєкту було досліджено декілька підходів:
+Several approaches were explored throughout the project.
 
-🔹 Класичні ознаки
+### 🔹 Feature Engineering
 
-- лексичні та символьні метрики (Jaccard, Levenshtein)
-- TF-IDF + distance-based features
+- Lexical and string similarity metrics (Jaccard, Levenshtein)
+- TF-IDF representations with distance-based features
 
-🔹 Семантичні підходи
+### 🔹 Semantic Features
 
 - SBERT embeddings
-- cosine similarity, L2 distance, dot product
+- Cosine similarity, L2 distance, and dot product
 
-🔹 Моделі
+### 🔹 Models
 
 - Logistic Regression (baseline)
 - Random Forest
 - LightGBM
-- MLP на SBERT-ембеддингах
+- MLP with SBERT embeddings
 - Weighted Ensemble (LightGBM + MLP)
 
-🛠 Інструменти
+### 🛠 Technologies
 
 - Python, NumPy, Pandas
 - Scikit-learn
 - LightGBM
 - PyTorch
 - Sentence-BERT
-- FastAPI (деплой)
-- Docker
+- FastAPI (deployment)
 
-## 6. Результати
-### 📊 Порівняння моделей
+## 6. Results
+### 📊 Model Comparison
 
-| Модель | Ознаки | Train Log Loss | Val Log Loss |
+| Model | Features | Train Log Loss | Val Log Loss |
 |------|--------|----------------|--------------|
 | Logistic Regression | Handcrafted features | 0.5639 | 0.5663 | 
 | Random Forest | Handcrafted features | 0.1569 | 0.5519 |
@@ -87,46 +90,69 @@ https://www.kaggle.com/c/quora-question-pairs
 | LightGBM | TF-IDF + handcrafted + SBERT Cosine | 0.2962 | 0.3087 | 
 | Ensemble | TF-IDF + handcrafted + SBERT Cosine + Sentence embeddings| 0.2683 | 0.2683 | 
 
-Ансамблева модель дозволила зменшити кількість false positives та покращити баланс помилок.
+The ensemble model reduced the number of false positives and achieved a better balance between different types of classification errors.
 
-## 7. Висновки
+## 7. Conclusions
 
-Семантичні ембеддинги (SBERT) суттєво перевершують класичні підходи.
-LightGBM добре працює з інженерними ознаками.
-MLP краще вловлює глибоку семантичну подібність.
-Ансамблювання моделей дозволяє покращити стабільність та якість прогнозів.
+- Semantic embeddings (SBERT) significantly outperform classical approaches.
+- LightGBM performs well with handcrafted features.
+- MLP can effectively capture deeper semantic patterns from SBERT embeddings.
+- Model ensembling improves prediction stability and overall performance.
 
-## 8. Як запустити проєкт (Installation & Usage)
-🔹 Клонування репозиторію  
-git clone https://github.com/your_username/duplicate-questions.git
+## 8. How to Run the Project (Installation & Usage)
+
+🔹 **Clone the repository**
+
+```bash
+git clone https://github.com/Daria-Nikolaieva/question-pair-similarity-ml.git
 cd duplicate-questions
+```
 
-🔹 Встановлення залежностей  
+🔹 **Install dependencies**
+
+```bash
 pip install -r requirements.txt
+```
 
-🔹 Запуск API  
+🔹 **Run the API**
+
+```bash
 uvicorn app:app --host 0.0.0.0 --port 8000
+```
 
-🔹 Запит до API  
+🔹 **Send a request to the API**
+
+Endpoint:
+
+```
 POST /predict
+```
+
+Example request:
+
+```json
 {
   "question1": "How can I learn machine learning?",
   "question2": "What is the best way to study ML?"
 }
+```
 
-## 9. Вимоги (requirements.txt)
+## 9. Requirements (`requirements.txt`)
 
-fastapi==0.127.0  
-uvicorn==0.40.0  
-torch==2.9.0  
-sentence-transformers==2.2.2  
-numpy==1.26.2  
-pandas==2.1.1  
-scikit-learn==1.7.2  
-scipy==1.11.2  
-lightgbm==4.0.0  
-joblib==1.3.2  
-pydantic==2.10.4  
-nltk==3.8.1  
-rapidfuzz==3.14.1  
-huggingface-hub==0.19.4  
+```text
+fastapi==0.127.0
+uvicorn==0.40.0
+torch==2.9.0
+sentence-transformers==5.2.0
+huggingface-hub==0.27.0
+numpy==1.26.2
+pandas==2.1.1
+scikit-learn==1.7.2
+scipy==1.11.2
+lightgbm==4.0.0
+joblib==1.3.2
+pydantic==2.10.4
+nltk==3.8.1
+rapidfuzz==3.14.1
+protobuf==5.29.3
+```
