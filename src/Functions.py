@@ -15,7 +15,8 @@ nltk.download('stopwords')
 nltk.download('punkt_tab')
 nltk.download('averaged_perceptron_tagger_eng')
 nltk.download('wordnet')
-
+STOP_WORDS = set(stopwords.words('english'))
+LEMMATIZER = WordNetLemmatizer()
 
 def common_words(q1, q2):
     return len(set(q1) & set(q2))
@@ -47,14 +48,14 @@ def get_wordnet_pos(tag):
         return wordnet.NOUN 
 
 def lemma_tokenizer(text):
-    lemmatizer = WordNetLemmatizer()
+    #lemmatizer = WordNetLemmatizer()
     stop_words = set(stopwords.words('english'))
     tokens = word_tokenize(text.lower())
-    tokens = [t for t in tokens if t.isalpha() and t not in stop_words]
+    tokens = [t for t in tokens if t.isalpha() and t not in STOP_WORDS]
 
     pos_tags = nltk.pos_tag(tokens)
     lemmas = [
-        lemmatizer.lemmatize(token, get_wordnet_pos(tag))
+        LEMMATIZER.lemmatize(token, get_wordnet_pos(tag))
         for token, tag in pos_tags
     ]
     return lemmas

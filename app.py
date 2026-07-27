@@ -32,8 +32,10 @@ sbert_model = None
 def get_sbert_model(device="cpu"):
     global sbert_model
     if sbert_model is None:
-        #sbert_model_path = os.path.join("models", "sbert")
-        sbert_model = SentenceTransformer("models/sbert", device=device)
+        sbert_model = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2",
+            device=device
+        )
     return sbert_model
 
 class SBERTMLP(nn.Module):
@@ -113,14 +115,15 @@ def predict(request: PredictionRequest):
 
     # MLP
     device = torch.device("cpu")
-    mlp_model = SBERTMLP(input_dim=INPUT_DIM)
-    mlp_model.load_state_dict(torch.load("models/sbert_mlp.pt", map_location=device))
-    mlp_model.eval()
 
     X_sbert = np.hstack([emb_q1, emb_q2, np.abs(emb_q1 - emb_q2)])
     X_sbert_scaled = scaler.transform(X_sbert)
     X_tensor = torch.tensor(X_sbert_scaled, dtype=torch.float32).to(device)
     INPUT_DIM = X_tensor.shape[1]
+
+    mlp_model = SBERTMLP(input_dim=INPUT_DIM)
+    mlp_model.load_state_dict(torch.load("models/sbert_mlp.pt", map_location=device))
+    mlp_model.eval()
 
     with torch.no_grad():
         mlp_proba = torch.sigmoid(mlp_model(X_tensor)).cpu().item()
@@ -130,7 +133,7 @@ def predict(request: PredictionRequest):
 
     return {
         "duplicate_probability": round(float(final_proba), 4),
-        "is_duplicate": final_proba > 0.4
+        "is_duplicate": bool(final_proba > 0.4)
     }
 
 
