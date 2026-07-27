@@ -1,0 +1,132 @@
+# 🔍 Duplicate Questions Detection
+## 1. Назва проєкту та короткий опис
+
+Duplicate Questions Detection — це проєкт з побудови моделі машинного навчання для визначення, чи є пара питань дублікатами за змістом.
+Задача полягає у виявленні семантично схожих запитів, навіть якщо вони сформульовані різними словами.
+
+## 2. Бізнес-задача та мета
+
+У багатьох сервісах (FAQ, служби підтримки, Q&A-платформи) користувачі часто ставлять однакові запитання у різних формулюваннях. Це призводить до:
+дублювання контенту, зайвого навантаження на модераторів, погіршення користувацького досвіду.
+Мета проєкту — побудувати модель, яка автоматично визначає, чи є два питання дублікатами, з високою точністю та стабільною якістю.
+
+## 3. Дані
+
+- Джерело: Quora Question Pairs
+https://www.kaggle.com/c/quora-question-pairs
+- Розмір: ~400 000 пар питань
+- Опис:
+ question1, question2 — текстові питання
+ is_duplicate — цільова змінна (1 — дублікати, 0 — ні)
+ Дані містять різноманітні формулювання, синоніми та перефразування, що робить задачу нетривіальною.
+
+## 4. Підхід до оцінювання та метрика
+
+Основною метрикою обрано Log Loss, оскільки:
+
+- задача є бінарною класифікацією з імовірнісним виходом;
+- важливо оцінювати не лише клас, а й впевненість моделі;
+- метрика добре підходить для порівняння ансамблевих моделей.
+  
+Додатково аналізувалися:
+
+- Confusion Matrix
+- Precision / Recall
+- Threshold tuning
+
+## 5. Підхід до розв’язку та інструменти
+
+У межах проєкту було досліджено декілька підходів:
+
+🔹 Класичні ознаки
+
+- лексичні та символьні метрики (Jaccard, Levenshtein)
+- TF-IDF + distance-based features
+
+🔹 Семантичні підходи
+
+- SBERT embeddings
+- cosine similarity, L2 distance, dot product
+
+🔹 Моделі
+
+- Logistic Regression (baseline)
+- Random Forest
+- LightGBM
+- MLP на SBERT-ембеддингах
+- Weighted Ensemble (LightGBM + MLP)
+
+🛠 Інструменти
+
+- Python, NumPy, Pandas
+- Scikit-learn
+- LightGBM
+- PyTorch
+- Sentence-BERT
+- FastAPI (деплой)
+- Docker
+
+## 6. Результати
+### 📊 Порівняння моделей
+
+| Модель | Ознаки | Train Log Loss | Val Log Loss |
+|------|--------|----------------|--------------|
+| Logistic Regression | Handcrafted features | 0.5639 | 0.5663 | 
+| Random Forest | Handcrafted features | 0.1569 | 0.5519 |
+| XGBoost | Handcrafted features | 0.4868 | 0.4958 | 
+| LightGBM | Handcrafted features | 0.4824 | 0.4938 | 
+| Logistic Regression | TF-IDF | 0.4766 | 0.5242 |
+| Linear SVM | TF-IDF | 0.4494 | 0.5284 | 
+| SGDClassifier | TF-IDF | 0.5480 | 0.5542 |
+| Logistic Regression | TF-IDF + handcrafted | 0.3888 | 0.4327 | 
+| Linear SVM | TF-IDF + handcrafted | 0.4648 | 0.5037 |
+| LightGBM | TF-IDF + handcrafted | 0.3957 | 0.4102 | 
+| SBERT + Logistic Regression | SBERT Cosine | 0.4228 | 0.4221 |
+| LightGBM SBERT | Sentence embeddings | 0.2879 | 0.3217 | 
+| MLP + SBERT | Sentence embeddings | 0.1248| 0.2822 | 
+| LightGBM | TF-IDF + handcrafted + SBERT Cosine | 0.2962 | 0.3087 | 
+| Ensemble | TF-IDF + handcrafted + SBERT Cosine + Sentence embeddings| 0.2683 | 0.2683 | 
+
+Ансамблева модель дозволила зменшити кількість false positives та покращити баланс помилок.
+
+## 7. Висновки
+
+Семантичні ембеддинги (SBERT) суттєво перевершують класичні підходи.
+LightGBM добре працює з інженерними ознаками.
+MLP краще вловлює глибоку семантичну подібність.
+Ансамблювання моделей дозволяє покращити стабільність та якість прогнозів.
+
+## 8. Як запустити проєкт (Installation & Usage)
+🔹 Клонування репозиторію  
+git clone https://github.com/your_username/duplicate-questions.git
+cd duplicate-questions
+
+🔹 Встановлення залежностей  
+pip install -r requirements.txt
+
+🔹 Запуск API  
+uvicorn app:app --host 0.0.0.0 --port 8000
+
+🔹 Запит до API  
+POST /predict
+{
+  "question1": "How can I learn machine learning?",
+  "question2": "What is the best way to study ML?"
+}
+
+## 9. Вимоги (requirements.txt)
+
+fastapi==0.127.0  
+uvicorn==0.40.0  
+torch==2.9.0  
+sentence-transformers==2.2.2  
+numpy==1.26.2  
+pandas==2.1.1  
+scikit-learn==1.7.2  
+scipy==1.11.2  
+lightgbm==4.0.0  
+joblib==1.3.2  
+pydantic==2.10.4  
+nltk==3.8.1  
+rapidfuzz==3.14.1  
+huggingface-hub==0.19.4  
